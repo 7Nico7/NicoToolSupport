@@ -193,8 +193,12 @@ export function useGanttFilters(initialFilters = {}, store, props = {}) {
     }
 
     // ── API pública ───────────────────────────────────────────────────────────
+    // IMPORTANTE: se retorna `state` como objeto, NO con spread (...state).
+    // Hacer spread de un reactive rompe la reactividad — las propiedades se
+    // vuelven plain values y Vue deja de rastrear sus cambios.
+    // En Index.vue usar: gf.isOpen, gf.filters, gf.activeCount (con gf = useGanttFilters(...))
     return {
-        ...state,       // filters, isOpen, activeCount (reactivos)
+        state,          // reactive completo: state.isOpen, state.filters, state.activeCount
         windowLabel,    // computed
         navigate,
         goToday,

@@ -4,8 +4,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="@yield('meta_description', 'JVJ Technology — Soluciones tecnológicas a medida para empresas que quieren crecer.')">
-    <title>@yield('title', 'JVJ Technology') — Soluciones Tecnológicas</title>
+    <meta name="description" content="Conoce la historia, el equipo y la metodología de JVJ Technology. Desarrollamos ERP y apps móviles escuchando primero a las personas.">
+    <title>Nosotros — JVJ Technology</title>
+
+    {{-- Tailwind CSS v3 CDN --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Configuración de colores personalizados --}}
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#2563eb',        // Azul principal
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        },
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        info: '#3b82f6',
+                        surface: {
+                            light: '#ffffff',
+                            dark: '#1e293b',
+                        },
+                        background: {
+                            light: '#f9fafc',
+                            dark: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
     {{-- Fuentes --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +53,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
-    {{-- Font Awesome solo para íconos de redes sociales --}}
+    {{-- Font Awesome --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     {{-- AOS --}}
@@ -21,11 +61,6 @@
 
     {{-- Alpine.js --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    {{-- Vite assets --}}
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    @yield('styles')
 
     <style>
         /* Material Symbols rendering */
@@ -36,9 +71,6 @@
             user-select: none;
         }
         .ms-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-
-        /* Scroll behavior for sticky nav shadow */
-        [x-ref="navbar"] { transition: box-shadow 0.2s ease, background 0.2s ease; }
 
         /* Dropdown triangle caret */
         .nav-dropdown-panel::before {
@@ -55,14 +87,7 @@
             transform: rotate(45deg);
         }
 
-        /* Smooth dropdown */
         [x-cloak] { display: none !important; }
-
-        /* Focus ring override for brand color */
-        .focus-brand:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgb(37 99 235 / 0.25);
-        }
     </style>
 </head>
 
@@ -83,8 +108,10 @@
             <a href="{{ route('public.home') }}"
                class="flex items-center gap-2.5 shrink-0 group focus-brand rounded-lg">
                 {{-- Brand mark --}}
-                <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center shadow-sm shadow-brand/30 group-hover:bg-primary-700 transition-colors duration-200">
-                    <span class="material-symbols-outlined text-white text-[18px] ms-filled">bolt</span>
+                <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm shadow-brand/30 group-hover:bg-primary-100 transition-colors duration-200">
+
+                    <x-logo />
+
                 </div>
                 {{-- Wordmark --}}
                 <div class="leading-tight">
@@ -401,8 +428,10 @@
             <div class="lg:col-span-2">
                 {{-- Logo --}}
                 <a href="{{ route('public.home') }}" class="inline-flex items-center gap-2.5 mb-4">
-                    <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-lg shadow-brand/30">
-                        <span class="material-symbols-outlined text-white text-[20px] ms-filled">bolt</span>
+                    <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-brand/30">
+
+           <x-logo />
+
                     </div>
                     <div class="leading-tight">
                         <span class="block text-base font-black tracking-tight">JVJ Technology</span>

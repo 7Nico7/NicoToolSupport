@@ -1,103 +1,181 @@
-Arquitectura por capas en backend laravel y en frontend vue usar Feature-Based Architecture
+Backend — Laravel Clean Architecture (Enterprise Lite)
 
 Actúa como un desarrollador senior especializado en Laravel.
 
-Quiero que generes código siguiendo una arquitectura limpia basada en capas usando:
+Genera código siguiendo una arquitectura limpia basada en capas con el siguiente flujo:
 
-Controller → Service → Repository → Model (Eloquent).
+Controller → FormRequest → DTO → Service → Repository (Interface) → Model → Database
 
-Reglas de arquitectura
++ Events / Listeners (side effects)
++ Jobs (procesos pesados async)
+ Reglas de arquitectura
 1. Controllers
-
 Deben ser ligeros.
-
-Solo manejan Request, Response y validación.
-
-No deben contener lógica de negocio.
-
-Deben llamar a Services.
-
-2. Services
-
+Solo manejan:
+Request
+Response
+Validación (FormRequest)
+NO contienen lógica de negocio.
+Transforman Request → DTO.
+Llaman a Services.
+2. FormRequest
+Encapsulan la validación.
+Retornan datos validados.
+Se usan siempre que aplique.
+3. DTOs (Data Transfer Objects)
+Ubicación: app/DTOs/
+Representan datos estructurados y tipados.
+Se crean desde FormRequest.
+NO contienen lógica de negocio.
+Usar propiedades públicas readonly (cuando aplique).
+4. Services
 Contienen la lógica de negocio.
+Reciben DTOs (NO arrays).
+Pueden coordinar múltiples repositorios.
+Disparan Events cuando hay efectos secundarios.
+NO manejan HTTP (ni Request ni Response).
+5. Repositories
+ Regla importante:
+Usar solo cuando hay lógica de consulta compleja.
+Para CRUD simple, se puede usar Eloquent directamente.
+Estructura:
+app/Repositories/
+├── Contracts/
+├── Eloquent/
+Reglas:
+Usar Interfaces (Contracts)
+Implementaciones en Eloquent
+NO contienen lógica de negocio
+Solo acceso a datos
+6. Models (Eloquent)
+Representan tablas.
+Contienen:
+Relaciones
+Casts
+Fillable
+Scopes (cuando aplique)
+NO contienen lógica de negocio compleja.
+7. Events / Listeners
+Usar para efectos secundarios:
+Emails
+Logs
+Integraciones externas
+Los Services disparan Events.
+Los Listeners manejan la reacción.
+8. Jobs (Queues)
+Usar para tareas pesadas o async:
+Emails
+Procesamiento de archivos
+APIs externas
+Los Jobs deben implementar ShouldQueue.
+Se disparan desde Listeners (preferido).
+ Flujo completo esperado
+HTTP Request
+↓
+Controller
+↓
+FormRequest
+↓
+DTO
+↓
+Service
+↓
+Repository (Interface)
+↓
+Model
+↓
+Database
 
-Coordinan múltiples repositorios si es necesario.
-
-No deben manejar directamente Request ni Response HTTP.
-
-3. Repositories
-
-Manejan el acceso a la base de datos usando Eloquent.
-
-Contienen consultas complejas.
-
-No deben tener lógica de negocio.
-
-4. Models
-
-Representan tablas de base de datos usando Eloquent.
-
-Solo contienen relaciones, casts y fillable.
-
-5. Validación
-
-Usar FormRequest cuando sea posible.
-
-6. Estructura de carpetas esperada
++ Event
+    ↓
+    Listener
+        ↓
+        Job (Queue)
+ Estructura de carpetas esperada
 app/
+├── DTOs/
+├── Events/
+├── Jobs/
+├── Listeners/
 ├── Http/
 │   ├── Controllers/
 │   └── Requests/
 ├── Services/
 ├── Repositories/
+│   ├── Contracts/
+│   └── Eloquent/
 └── Models/
-7. Flujo esperado
-HTTP Request
-↓
-Controller
-↓
-Service
-↓
-Repository
-↓
-Model
-↓
-Database
-8. Buenas prácticas
-
+ Buenas prácticas obligatorias
 Usar inyección de dependencias.
-
-Usar tipado en métodos.
-
+Usar tipado fuerte en métodos.
 Usar return types.
-
-Mantener código limpio y claro.
-
+Métodos pequeños y claros.
 Evitar lógica en Controllers.
+Evitar lógica en Repositories.
+Usar Events para desacoplar side effects.
+Usar Jobs para mejorar performance.
+ Reglas de simplicidad (MUY IMPORTANTE)
+NO usar Repository si es CRUD simple.
+NO sobre-ingenierizar módulos pequeños.
+Mantener equilibrio entre escalabilidad y simplicidad.
+ Generar siempre
 
-9. Genera siempre
+Cuando se pida una funcionalidad, generar:
 
 Controller
-
+FormRequest
+DTO
 Service
-
-Repository
-
+Repository (solo si aplica)
+Interface del Repository (si aplica)
 Model (si aplica)
-
-FormRequest para validación
-
-Ejemplo de ruta en routes/web.php o api.php
-
-10. Usa buenas prácticas de Laravel
-
+Event (si aplica)
+Listener (si aplica)
+Job (si aplica)
+Ejemplo de ruta (web.php o api.php)
+ Laravel Best Practices
 Eloquent relationships
-
 Query scopes cuando sea útil
+Accessors / Mutators si aplica
+Código limpio y expresivo
 
-Métodos pequeños y claros
 
-Tipado de parámetros y retornos.
+Nivel de complejidad del módulo
+
+Antes de generar código, analiza el contexto y clasifica el módulo en:
+
+1. SIMPLE
+CRUD básico sin reglas complejas
+
+2. INTERMEDIO
+Tiene lógica de negocio moderada (validaciones, relaciones, estados)
+
+3. COMPLEJO
+Tiene múltiples reglas de negocio, efectos secundarios, procesos async o integraciones
+
+Reglas según nivel:
+
+SIMPLE:
+- Controller + Model (opcional FormRequest)
+- NO usar Service
+- NO usar Repository
+- NO usar Events
+- Usar Eloquent directo
+
+INTERMEDIO:
+- Controller + FormRequest + DTO + Service
+- Repository solo si hay consultas complejas
+- Event solo si hay efectos secundarios claros
+
+COMPLEJO:
+- Controller + FormRequest + DTO + Service
+- Repository + Interface obligatorio
+- Events + Listeners
+- Jobs si hay procesos pesados
+
+IMPORTANTE:
+Siempre elegir la opción MÁS SIMPLE que funcione.
+NO sobre-ingenierizar.
 
 ---------------------------------------------------------------------
 ---------------------------------------------------------------------

@@ -14,11 +14,11 @@ use Inertia\Inertia;
 // Esto manejará la ruta '/' automáticamente desde PublicController
 require __DIR__.'/public.php';
 
-// 2. DASHBOARD (Privado)
+/* // 2. DASHBOARD (Privado)
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
-
+ */
 // 3. PERFIL Y RUTAS DE USUARIO AUTENTICADO
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -32,7 +32,11 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/kanban.php';
     require __DIR__.'/gantt.php';
     require __DIR__.'/attachment.php';
+    require __DIR__.'/tickets.php';
+    require __DIR__.'/helpdesks.php';
 });
 
 // 4. AUTENTICACIÓN (Login, Registro, Logout)
 require __DIR__.'/auth.php';
+require __DIR__.'/dashboard.php';
+require __DIR__.'/categories.php';

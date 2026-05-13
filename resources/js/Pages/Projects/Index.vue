@@ -1,5 +1,6 @@
 <script setup>
 // resources/js/Pages/Projects/Index.vue
+import { computed } from 'vue'
 import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import SidebarFilter from '@/shared/components/SidebarFilter.vue'
@@ -12,19 +13,24 @@ import PrimaryButton from '@/shared/components/buttons/PrimaryButton.vue'
 import SecondaryButton from '@/shared/components/buttons/SecondaryButton.vue'
 import FilterButton from '@/shared/components/buttons/FilterButton.vue'
 import { useFilters } from '@/shared/composables/useFilters'
+import { useAuth }    from '@/shared/composables/useAuth'
 import { useDatatable } from '@/shared/composables/useDatatable'
 import { useModal } from '@/shared/composables/useModal'
 
 const props = defineProps({
     projects: { type: Object, required: true },
     filters:  { type: Object, default: () => ({}) },
-    can:      { type: Object, default: () => ({}) },
+    companies: { type: Array,  default: () => [] },
+    can:       { type: Object, default: () => ({}) },
 })
+
+const { isSuperAdmin } = useAuth()
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
 const filterManager = useFilters('projects.index', {
-    search: props.filters.search ?? '',
-    is_active: props.filters.is_active ?? '',
+    search:     props.filters.search     ?? '',
+    is_active:  props.filters.is_active  ?? '',
+    company_id: props.filters.company_id ?? '',
 })
 // ── Datatable ─────────────────────────────────────────────────────────────────
 const dt = useDatatable('projects.index', () => props.projects, filterManager, {
@@ -38,6 +44,11 @@ const statusOptions = [
     { id: '1', name: 'Activos' },
     { id: '0', name: 'Inactivos' },
 ]
+
+const companyOptions = computed(() => [
+    { id: '', name: 'Todas las compañías' },
+    ...props.companies.map(c => ({ id: c.id, name: c.name })),
+])
 
 // ── Columnas ──────────────────────────────────────────────────────────────────
 const columns = [
@@ -168,6 +179,10 @@ const rowActions = (project) => {
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado del proyecto</label>
                     <SelectInput v-model="filterManager.filters.is_active" :options="statusOptions" />
+                </div>
+                <div v-if="isSuperAdmin">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Compañía</label>
+                    <SelectInput v-model="filterManager.filters.company_id" :options="companyOptions" />
                 </div>
             </div>
         </SidebarFilter>

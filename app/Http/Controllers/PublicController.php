@@ -104,31 +104,31 @@ class PublicController extends Controller
 
     public function demoDashboard()
     {
-        return view('demo.dashboard', ['title' => 'Dashboard']);
+        return view('demos.dashboard', ['title' => 'Dashboard']);
     }
 
     public function demoClientes()
     {
-        return view('demo.clientes', ['title' => 'Clientes']);
+        return view('demos.clientes', ['title' => 'Clientes']);
     }
 
     public function demoInventario()
     {
-        return view('demo.inventario', ['title' => 'Inventario']);
+        return view('demos.inventario', ['title' => 'Inventario']);
     }
 
     public function demoExistencia()
     {
-        return view('demo.inventario-existencia', ['title' => 'Existencia de Inventario']);
+        return view('demos.inventario-existencia', ['title' => 'Existencia de Inventario']);
     }
 
     public function demoCotizaciones()
     {
-        return view('demo.cotizaciones', ['title' => 'Cotizaciones']);
+        return view('demos.cotizaciones', ['title' => 'Cotizaciones']);
     }
 
     public function demoFacturacion()
     {
-        return view('demo.facturacion', ['title' => 'Facturación']);
+        return view('demos.facturacion', ['title' => 'Facturación']);
     }
 }

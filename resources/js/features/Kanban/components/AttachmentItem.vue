@@ -1,5 +1,5 @@
 <script setup>
-// resources/js/shared/components/AttachmentItem.vue
+// resources/js/features/kanban/components/AttachmentItem.vue
 //
 // Renderiza un archivo adjunto individual.
 // Usado tanto en la tab "Archivos" (ticket-level) como inline en mensajes.

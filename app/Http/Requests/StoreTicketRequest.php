@@ -16,7 +16,9 @@ class StoreTicketRequest extends FormRequest
 
     public function rules(): array
     {
-        $companyId = $this->user()->company_id;
+        $companyId = $this->user()->isSuperAdmin()
+    ? ($this->integer('company_id') ?: $this->user()->company_id)
+    : $this->user()->company_id;
 
         return [
             'title'       => ['required', 'string', 'max:255'],

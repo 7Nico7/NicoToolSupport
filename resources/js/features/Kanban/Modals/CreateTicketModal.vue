@@ -13,13 +13,19 @@ import { useTicketForm } from '@/features/Kanban/composables/useTicketForm';
 import { useKanbanStore } from '@/features/Kanban/stores/kanbanStore';
 
 const props = defineProps({
-    show:       { type: Boolean, default: false },
-    statuses:   { type: Array,   default: () => [] },
-    priorities: { type: Array,   default: () => [] },
-    types:      { type: Array,   default: () => [] },
-    categories: { type: Array,   default: () => [] },
-    projects:   { type: Array,   default: () => [] },
-    helpdesks:  { type: Array,   default: () => [] },
+    show:          { type: Boolean, default: false },
+    statuses:      { type: Array,   default: () => [] },
+    priorities:    { type: Array,   default: () => [] },
+    types:         { type: Array,   default: () => [] },
+    categories:    { type: Array,   default: () => [] },  // compañía del usuario
+    projects:      { type: Array,   default: () => [] },  // compañía del usuario
+    helpdesks:     { type: Array,   default: () => [] },  // compañía del usuario
+    // super_admin: catálogos globales con company_id para filtrar client-side
+    companies:     { type: Array,   default: () => [] },
+    isSuperAdmin:  { type: Boolean, default: false },
+    allProjects:   { type: Array,   default: () => [] },
+    allHelpdesks:  { type: Array,   default: () => [] },
+    allCategories: { type: Array,   default: () => [] },
 });
 
 const emit  = defineEmits(['close', 'created']);
@@ -31,8 +37,44 @@ watch(() => props.show, (v) => {
     if (v) reset({ status_id: props.statuses[0]?.id ?? null });
 });
 
-// ── Opciones para SelectInput ─────────────────────────────────────────────────
-// Las opciones con id: null requieren un placeholder en el SelectInput
+// ── Compañía seleccionada (solo super_admin) ──────────────────────────────────
+const selectedCompanyId = ref(null);
+
+watch(() => props.show, (v) => {
+    if (!v) selectedCompanyId.value = null;
+});
+
+// Cuando cambia la compañía, limpiar los campos que dependen de ella
+watch(selectedCompanyId, () => {
+    form.value.project_id  = null;
+    form.value.helpdesk_id = null;
+    form.value.category_id = null;
+    form.value.assigned_to = null;
+});
+
+// ── Catálogos filtrados por compañía seleccionada ─────────────────────────────
+const activeProjects = computed(() => {
+    if (!props.isSuperAdmin) return props.projects;
+    if (!selectedCompanyId.value) return [];
+    return props.allProjects.filter(p => p.company_id == selectedCompanyId.value);
+});
+
+const activeHelpdesks = computed(() => {
+    if (!props.isSuperAdmin) return props.helpdesks;
+    if (!selectedCompanyId.value) return [];
+    return props.allHelpdesks.filter(h => h.company_id == selectedCompanyId.value);
+});
+
+const activeCategories = computed(() => {
+    if (!props.isSuperAdmin) return props.categories;
+    if (!selectedCompanyId.value) return [];
+    return props.allCategories.filter(c => c.company_id == selectedCompanyId.value);
+});
+
+// ── Opciones SelectInput ──────────────────────────────────────────────────────
+const companyOptions = computed(() =>
+    props.companies.map(c => ({ id: c.id, name: c.name }))
+);
 const statusOptions = computed(() =>
     props.statuses.map(s => ({ id: s.id, name: s.name }))
 );
@@ -46,22 +88,27 @@ const typeOptions = computed(() => [
 ]);
 const categoryOptions = computed(() => [
     { id: null, name: 'Sin categoría' },
-    ...props.categories.map(c => ({ id: c.id, name: c.name })),
+    ...activeCategories.value.map(c => ({ id: c.id, name: c.name })),
 ]);
 const projectOptions = computed(() => [
     { id: null, name: 'Sin proyecto' },
-    ...props.projects.map(p => ({ id: p.id, name: p.name })),
+    ...activeProjects.value.map(p => ({ id: p.id, name: p.name })),
 ]);
 const helpdeskOptions = computed(() => [
     { id: null, name: 'Sin helpdesk' },
-    ...props.helpdesks.map(h => ({ id: h.id, name: h.name })),
+    ...activeHelpdesks.value.map(h => ({ id: h.id, name: h.name })),
 ]);
 
 const submit = async () => {
     if (!isValid.value || saving.value) return;
     saving.value = true;
     try {
-        const ticket = await store.createTicket(form.value);
+        // Para super_admin, incluir company_id en el payload
+        const payload = { ...form.value };
+        if (props.isSuperAdmin && selectedCompanyId.value) {
+            payload.company_id = selectedCompanyId.value;
+        }
+        const ticket = await store.createTicket(payload);
         emit('created', ticket);
         emit('close');
     } catch (err) {
@@ -83,6 +130,20 @@ const submit = async () => {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
 
+            <!-- Compañía (solo super_admin) -->
+            <div v-if="isSuperAdmin" class="md:col-span-2">
+                <InputLabel value="Compañía" :required="true" />
+                <SelectInput
+                    v-model="selectedCompanyId"
+                    :options="companyOptions"
+                    placeholder="Selecciona una compañía..."
+                    class="mt-1"
+                />
+                <p v-if="isSuperAdmin && !selectedCompanyId" class="mt-1 text-[10px] text-amber-500 font-semibold">
+                    Selecciona una compañía para ver proyectos, helpdesks y categorías disponibles.
+                </p>
+            </div>
+
             <!-- Título -->
             <div class="md:col-span-2">
                 <InputLabel value="Título" required />
@@ -97,7 +158,6 @@ const submit = async () => {
             </div>
 
             <!-- Descripción -->
-            <!-- <textarea> nativo se mantiene — no existe TextareaInput como componente compartido -->
             <div class="md:col-span-2">
                 <InputLabel value="Descripción" />
                 <textarea
@@ -109,34 +169,21 @@ const submit = async () => {
             </div>
 
             <!-- Estado -->
-            <!-- <select> → SelectInput -->
             <div>
                 <InputLabel value="Estado" required />
-                <SelectInput
-                    v-model="form.status_id"
-                    :options="statusOptions"
-                    class="mt-1"
-                />
+                <SelectInput v-model="form.status_id" :options="statusOptions" class="mt-1" />
             </div>
 
             <!-- Prioridad -->
             <div>
                 <InputLabel value="Prioridad" />
-                <SelectInput
-                    v-model="form.priority_id"
-                    :options="priorityOptions"
-                    class="mt-1"
-                />
+                <SelectInput v-model="form.priority_id" :options="priorityOptions" class="mt-1" />
             </div>
 
             <!-- Tipo -->
             <div>
                 <InputLabel value="Tipo" />
-                <SelectInput
-                    v-model="form.type_id"
-                    :options="typeOptions"
-                    class="mt-1"
-                />
+                <SelectInput v-model="form.type_id" :options="typeOptions" class="mt-1" />
             </div>
 
             <!-- Categoría -->
@@ -145,6 +192,7 @@ const submit = async () => {
                 <SelectInput
                     v-model="form.category_id"
                     :options="categoryOptions"
+                    :disabled="isSuperAdmin && !selectedCompanyId"
                     class="mt-1"
                 />
             </div>
@@ -155,6 +203,7 @@ const submit = async () => {
                 <SelectInput
                     v-model="form.project_id"
                     :options="projectOptions"
+                    :disabled="isSuperAdmin && !selectedCompanyId"
                     class="mt-1"
                 />
             </div>
@@ -165,6 +214,7 @@ const submit = async () => {
                 <SelectInput
                     v-model="form.helpdesk_id"
                     :options="helpdeskOptions"
+                    :disabled="isSuperAdmin && !selectedCompanyId"
                     class="mt-1"
                 />
             </div>
@@ -173,19 +223,18 @@ const submit = async () => {
             <div>
                 <InputLabel value="Asignar a" />
                 <div class="mt-1">
-                    <AgentSearchInput v-model="form.assigned_to" />
+                    <AgentSearchInput
+                        v-model="form.assigned_to"
+                        :company-id="isSuperAdmin ? selectedCompanyId : null"
+                        :disabled="isSuperAdmin && !selectedCompanyId"
+                    />
                 </div>
             </div>
 
             <!-- Fecha de vencimiento -->
             <div>
                 <InputLabel value="Fecha de vencimiento" />
-                <TextInput
-                    v-model="form.due_date"
-                    type="date"
-                    icon="calendar_month"
-                    class="mt-1"
-                />
+                <TextInput v-model="form.due_date" type="date" icon="calendar_month" class="mt-1" />
             </div>
         </div>
 
@@ -194,7 +243,7 @@ const submit = async () => {
             <PrimaryButton
                 icon="add"
                 :loading="saving"
-                :disabled="!isValid"
+                :disabled="!isValid || (isSuperAdmin && !selectedCompanyId)"
                 @click="submit"
             >
                 Crear Ticket

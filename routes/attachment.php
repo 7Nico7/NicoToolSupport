@@ -25,5 +25,16 @@ Route::middleware(['auth', 'signed'])->group(function () {
         '/attachments/message/{attachment}/download',
         [AttachmentController::class, 'downloadMessageAttachment']
     )->name('attachments.message.download');
+});
 
+Route::middleware(['auth'])->group(function () {
+
+
+    // ── Adjuntos del ticket (evidencias directas) ← NUEVO ────────────────
+    Route::post('api/kanban/tickets/{ticket}/attachments',      [AttachmentController::class, 'storeTicketAttachment']);
+    Route::delete('api/kanban/ticket-attachments/{attachment}',   [AttachmentController::class, 'destroyTicketAttachment']);
+
+    // ── Adjuntos de mensaje ← NUEVO ───────────────────────────────────────
+    Route::post('api/kanban/messages/{message}/attachments',    [AttachmentController::class, 'storeMessageAttachment']);
+    Route::delete('api/kanban/message-attachments/{attachment}',  [AttachmentController::class, 'destroyMessageAttachment']);
 });

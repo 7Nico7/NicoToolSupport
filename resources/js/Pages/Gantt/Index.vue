@@ -17,6 +17,7 @@ const props = defineProps({
     statuses: { type: Array, default: () => [] },
     priorities: { type: Array, default: () => [] },
     types: { type: Array, default: () => [] },
+        company: { type: Array, default: () => [] },
     categories: { type: Array, default: () => [] },
     projects: { type: Array, default: () => [] },
     agents: { type: Array, default: () => [] },
@@ -47,8 +48,8 @@ const categoryOptions = computed(() => [{ id: '', name: 'Todas' }, ...props.cate
 const agentOptions = computed(() => [{ id: '', name: 'Todos' }, ...props.agents.map(a => ({ id: a.id, name: a.name }))]);
 
 const selectedCompanyName = computed(() => {
-    if (!isSuperAdmin.value || !gf.filters.company_id) return null;
-    return props.companies.find(c => c.id == gf.filters.company_id)?.name ?? null;
+    if (!isSuperAdmin.value || !gf.state.filters.company_id) return null;
+    return props.companies.find(c => c.id == gf.state.filters.company_id)?.name ?? null;
 });
 
 // Claves del sidebar visibles como chips
@@ -88,10 +89,18 @@ const handleEditTicket = (ticketId) => { console.info('[Gantt] Edit ticket:', ti
                         <span class="material-symbols-outlined text-danger text-sm">warning</span>
                         <span class="text-xs font-bold text-danger">{{ store.overdueCount }} vencidos</span>
                     </div>
-                    <div v-if="isSuperAdmin && selectedCompanyName"
+                      <!-- ──
+                                  <div v-if="isSuperAdmin && selectedCompanyName"
                         class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand/5 border border-brand/20">
                         <span class="material-symbols-outlined text-brand text-sm">business</span>
-                        <span class="text-xs font-bold text-brand">{{ selectedCompanyName }}</span>
+                        <span class="text-xs font-bold text-brand">{{ selectedCompanyName  }}</span>
+                    </div>
+
+                        ───────────────────────────── -->
+                <div v-if="company.name"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand/5 border border-brand/20">
+                        <span class="material-symbols-outlined text-brand text-sm">business</span>
+                        <span class="text-xs font-bold text-brand">{{ company.name  }}</span>
                     </div>
                 </div>
             </div>
@@ -148,13 +157,13 @@ const handleEditTicket = (ticketId) => { console.info('[Gantt] Edit ticket:', ti
                 <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
 
                 <!-- Filtros -->
-                <FilterButton :active-count="gf.activeCount" @click="gf.isOpen = true" />
+                <FilterButton :active-count="gf.state.activeCount" @click="gf.state.isOpen = true" />
 
                 <!-- Chips filtros activos del sidebar -->
                 <template v-for="key in SIDEBAR_KEYS" :key="key">
-                    <span v-if="gf.filters[key]"
+                    <span v-if="gf.state.filters[key]"
                         class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-brand/10 text-brand">
-                        {{ gf.resolveLabel(key, gf.filters[key]) }}
+                        {{ gf.resolveLabel(key, gf.state.filters[key]) }}
                         <button type="button" @click="gf.updateFilter(key, '')"
                             class="hover:opacity-60 transition-opacity leading-none">
                             <span class="material-symbols-outlined text-[13px]">close</span>
@@ -171,7 +180,7 @@ const handleEditTicket = (ticketId) => { console.info('[Gantt] Edit ticket:', ti
         </div>
 
         <!-- ── SidebarFilter ───────────────────────────────────────────────── -->
-        <SidebarFilter v-model:open="gf.isOpen" :active-count="gf.activeCount" title="Filtrar tickets"
+        <SidebarFilter v-model:open="gf.state.isOpen" :active-count="gf.state.activeCount" title="Filtrar tickets"
             @clear="gf.clearFilters()">
 
             <div class="space-y-5 pt-4">
@@ -180,13 +189,13 @@ const handleEditTicket = (ticketId) => { console.info('[Gantt] Edit ticket:', ti
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Vence
                         desde</label>
-                    <TextInput type="date" :model-value="gf.filters.due_after"
+                    <TextInput type="date" :model-value="gf.state.filters.due_after"
                         @update:model-value="v => gf.updateFilter('due_after', v)" />
                 </div>
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Vence
                         hasta</label>
-                    <TextInput type="date" :model-value="gf.filters.due_before"
+                    <TextInput type="date" :model-value="gf.state.filters.due_before"
                         @update:model-value="v => gf.updateFilter('due_before', v)" />
                 </div>
 
@@ -194,43 +203,43 @@ const handleEditTicket = (ticketId) => { console.info('[Gantt] Edit ticket:', ti
                 <div v-if="isSuperAdmin && companies.length">
                     <label
                         class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Compañía</label>
-                    <SelectInput :model-value="gf.filters.company_id" :options="companyOptions"
+                    <SelectInput :model-value="gf.state.filters.company_id" :options="companyOptions"
                         @update:model-value="v => gf.updateFilter('company_id', v)" />
                 </div>
                 <div>
                     <label
                         class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Proyecto</label>
-                    <SelectInput :model-value="gf.filters.project_id" :options="projectOptions"
+                    <SelectInput :model-value="gf.state.filters.project_id" :options="projectOptions"
                         @update:model-value="v => gf.updateFilter('project_id', v)" />
                 </div>
                 <div>
                     <label
                         class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado</label>
-                    <SelectInput :model-value="gf.filters.status_id" :options="statusOptions"
+                    <SelectInput :model-value="gf.state.filters.status_id" :options="statusOptions"
                         @update:model-value="v => gf.updateFilter('status_id', v)" />
                 </div>
                 <div>
                     <label
                         class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Prioridad</label>
-                    <SelectInput :model-value="gf.filters.priority_id" :options="priorityOptions"
+                    <SelectInput :model-value="gf.state.filters.priority_id" :options="priorityOptions"
                         @update:model-value="v => gf.updateFilter('priority_id', v)" />
                 </div>
                 <div>
                     <label
                         class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo</label>
-                    <SelectInput :model-value="gf.filters.type_id" :options="typeOptions"
+                    <SelectInput :model-value="gf.state.filters.type_id" :options="typeOptions"
                         @update:model-value="v => gf.updateFilter('type_id', v)" />
                 </div>
                 <div>
                     <label
                         class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Categoría</label>
-                    <SelectInput :model-value="gf.filters.category_id" :options="categoryOptions"
+                    <SelectInput :model-value="gf.state.filters.category_id" :options="categoryOptions"
                         @update:model-value="v => gf.updateFilter('category_id', v)" />
                 </div>
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Asignado
                         a</label>
-                    <SelectInput :model-value="gf.filters.assigned_to" :options="agentOptions"
+                    <SelectInput :model-value="gf.state.filters.assigned_to" :options="agentOptions"
                         @update:model-value="v => gf.updateFilter('assigned_to', v)" />
                 </div>
             </div>

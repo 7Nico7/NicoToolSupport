@@ -30,7 +30,6 @@
 <section class="py-8 bg-background-light dark:bg-background-dark">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {-- Barra de controles --}
         <div class="flex flex-wrap items-center justify-between gap-3
                     bg-surface-light dark:bg-surface-dark
                     border border-gray-200 dark:border-white/[0.08]

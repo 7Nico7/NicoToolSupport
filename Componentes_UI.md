@@ -248,3 +248,7 @@ Todos los componentes usan el tema Tailwind del proyecto:
 .btn-secondary
 .btn-danger
 ```
+
+
+
+php artisan reverb:start

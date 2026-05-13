@@ -32,6 +32,7 @@ class GanttController extends Controller
     {
         /** @var User $user */
         $user         = Auth::user();
+                $company      = $user->company;
         $companyId    = $user->company_id;
         $isSuperAdmin = $user->isSuperAdmin();
 
@@ -49,6 +50,7 @@ class GanttController extends Controller
             'statuses'   => TicketStatus::orderBy('order')->get(['id', 'name', 'color', 'order']),
             'priorities' => TicketPriority::orderBy('level')->get(['id', 'name', 'color', 'level']),
             'types'      => TicketType::all(['id', 'name']),
+                      'company'    => $company,
             'categories' => $isSuperAdmin
                 ? TicketCategory::orderBy('name')->get(['id', 'name'])
                 : TicketCategory::where('company_id', $companyId)->get(['id', 'name']),

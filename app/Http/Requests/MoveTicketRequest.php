@@ -12,7 +12,9 @@ class MoveTicketRequest extends FormRequest
         $ticket = $this->route('ticket');
         $user   = $this->user();
 
-        // Solo agentes y admins pueden mover tickets en el Kanban
+        // super_admin puede mover tickets de cualquier compañía
+        if ($user->isSuperAdmin()) return true;
+
         return $ticket->company_id === $user->company_id
             && in_array($user->role, ['agent', 'admin']);
     }

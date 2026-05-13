@@ -1,26 +1,32 @@
 <script setup>
 // resources/js/Pages/Projects/Form.vue
 import { computed } from 'vue'
+import { useAuth } from '@/shared/composables/useAuth'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import InputLabel from '@/shared/components/InputLabel.vue'
 import TextInput from '@/shared/components/TextInput.vue'
 import PrimaryButton from '@/shared/components/buttons/PrimaryButton.vue'
 import SecondaryButton from '@/shared/components/buttons/SecondaryButton.vue'
+import SelectInput     from '@/shared/components/SelectInput.vue'
 
 const props = defineProps({
     project: { type: Object, default: null },
     company: { type: Object, default: null },
-    can:     { type: Object, default: () => ({}) },
+    companies: { type: Array,  default: () => [] },
+    can:       { type: Object, default: () => ({}) },
 })
 
+const { isSuperAdmin } = useAuth()
 const isEditing = computed(() => props.project !== null)
+const companyOptions = computed(() => props.companies.map(c => ({ id: c.id, name: c.name })))
 
 const form = useForm({
     name:        props.project?.name        ?? '',
     email:       props.project?.email       ?? '',
     description: props.project?.description ?? '',
     is_active:   props.project?.is_active   ?? true,
+    company_id:  props.project?.company_id  ?? props.company?.id ?? '',
 })
 
 const submit = () => {
@@ -39,7 +45,7 @@ const submit = () => {
         <div class="max-w-full mx-auto flex flex-col gap-5">
 
             <div class="flex flex-col gap-2">
-                <!-- ✅ SecondaryButton en lugar de <Link> nativo con estilos manuales -->
+                <!-- SecondaryButton en lugar de <Link> nativo con estilos manuales -->
                 <SecondaryButton
                     type="button"
                     icon="arrow_back"
@@ -111,13 +117,21 @@ const submit = () => {
                         </div>
 
                         <div class="md:col-span-1">
-                            <InputLabel value="Compañía" />
-                            <div class="mt-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 opacity-80">
+                            <InputLabel value="Compañía" :required="isSuperAdmin" />
+                            <!-- super_admin puede elegir compañía; los demás ven el campo de solo lectura -->
+                            <SelectInput
+                                v-if="isSuperAdmin"
+                                v-model="form.company_id"
+                                :options="companyOptions"
+                                class="mt-1"
+                            />
+                            <div v-else class="mt-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 opacity-80">
                                 <span class="material-symbols-outlined text-slate-400 text-[18px]">business</span>
                                 <span class="text-sm text-slate-700 dark:text-slate-300 font-medium">
                                     {{ company?.name ?? '—' }}
                                 </span>
                             </div>
+                            <p v-if="form.errors.company_id" class="mt-1 text-xs text-red-500">{{ form.errors.company_id }}</p>
                         </div>
 
                         <div v-if="can.deactivate" class="md:col-span-1 flex flex-col justify-end pb-1">

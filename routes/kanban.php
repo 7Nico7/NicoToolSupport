@@ -27,14 +27,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('agents/search', [KanbanController::class, 'searchAgents'])->name('agents.search');
 
 
-
-        // ── Adjuntos del ticket (evidencias directas) ← NUEVO ────────────────
-        Route::post  ('tickets/{ticket}/attachments',      [AttachmentController::class, 'storeTicketAttachment']);
-        Route::delete('ticket-attachments/{attachment}',   [AttachmentController::class, 'destroyTicketAttachment']);
-
-        // ── Adjuntos de mensaje ← NUEVO ───────────────────────────────────────
-        Route::post  ('messages/{message}/attachments',    [AttachmentController::class, 'storeMessageAttachment']);
-        Route::delete('message-attachments/{attachment}',  [AttachmentController::class, 'destroyMessageAttachment']);
     });
 });
 

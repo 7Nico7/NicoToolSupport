@@ -8,6 +8,8 @@ const props = defineProps({
     modelValue:  { type: [Number, null], default: null },
     initialName: { type: String,         default: '' },
     placeholder: { type: String,         default: 'Buscar agente...' },
+    companyId:   { type: [Number, null], default: null },  // super_admin: acotar búsqueda
+    disabled:    { type: Boolean,        default: false },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -20,7 +22,7 @@ watch(() => props.initialName, (v) => { query.value = v; });
 const onInput = async (value) => {
     query.value = value;
     emit('update:modelValue', null);
-    await search(value);
+    await search(value, props.companyId);
     showResults.value = results.value.length > 0;
 };
 
@@ -48,6 +50,7 @@ const onBlur = () => setTimeout(() => { showResults.value = false; }, 150);
             :placeholder="placeholder"
             :icon="isSearching ? 'progress_activity' : 'person_search'"
             :icon-trail="query ? 'close' : null"
+            :disabled="disabled"
             autocomplete="off"
             @update:model-value="onInput"
             @trailing-click="clearSelection"

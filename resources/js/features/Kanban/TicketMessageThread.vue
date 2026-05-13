@@ -4,7 +4,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import PrimaryButton from '@/shared/components/buttons/PrimaryButton.vue';
 import SecondaryButton from '@/shared/components/buttons/SecondaryButton.vue';
 import Checkbox from '@/shared/components/Checkbox.vue';
-import AttachmentItem from '@/shared/components/AttachmentItem.vue';
+import AttachmentItem from '@/features/Kanban/components/AttachmentItem.vue';
 
 const props = defineProps({
     messages:    { type: Array,   default: () => [] },

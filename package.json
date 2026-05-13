@@ -23,6 +23,7 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "chart.js": "^4.5.1",
         "pinia": "^3.0.4",
         "qs-esm": "^7.0.3",
         "vuedraggable": "^4.1.0"

@@ -2,16 +2,14 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
-/**
- * Composable para búsqueda debounced de agentes.
- * Encapsula la lógica que antes estaba duplicada en UserSearchInput.
- */
 export function useAgentSearch() {
     const results     = ref([]);
     const isSearching = ref(false);
     let timer         = null;
 
-    async function search(query) {
+    // companyId: pasado por super_admin para acotar la búsqueda a una compañía específica.
+    // Para otros roles es null y el backend usa $user->company_id automáticamente.
+    async function search(query, companyId = null) {
         clearTimeout(timer);
 
         if (!query?.trim()) {
@@ -23,9 +21,10 @@ export function useAgentSearch() {
 
         timer = setTimeout(async () => {
             try {
-                const { data } = await axios.get('/api/kanban/agents/search', {
-                    params: { q: query },
-                });
+                const params = { q: query };
+                if (companyId) params.company_id = companyId;
+
+                const { data } = await axios.get('/api/kanban/agents/search', { params });
                 results.value = data;
             } catch {
                 results.value = [];

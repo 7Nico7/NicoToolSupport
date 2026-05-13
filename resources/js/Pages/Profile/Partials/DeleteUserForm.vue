@@ -3,7 +3,7 @@ import DangerButton from '@/shared/components/buttons/DangerButton.vue';
 import InputError from '@/shared/components/InputError.vue';
 import InputLabel from '@/shared/components/InputLabel.vue';
 import Modal from '@/shared/components/Modal.vue';
-import SecondaryButton from '@/Components/UI/Buttons/SecondaryButton.vue';
+import SecondaryButton from '@/shared/components/buttons/SecondaryButton.vue';
 import TextInput from '@/shared/components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
 import { nextTick, ref } from 'vue';

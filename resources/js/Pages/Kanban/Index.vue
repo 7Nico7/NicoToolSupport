@@ -21,14 +21,20 @@ import { useAuth } from '@/shared/composables/useAuth'
  * Props (Inertia)
  * ───────────────────────────────────────────────────────── */
 const props = defineProps({
-    statuses:   { type: Array,  default: () => [] },
-    priorities: { type: Array,  default: () => [] },
-    types:      { type: Array,  default: () => [] },
-    categories: { type: Array,  default: () => [] },
-    projects:   { type: Array,  default: () => [] },
-    helpdesks:  { type: Array,  default: () => [] },
-    agents:     { type: Array,  default: () => [] },
-    can:        { type: Object, default: () => ({ create: false, delete: false }) },
+    statuses: { type: Array, default: () => [] },
+    priorities: { type: Array, default: () => [] },
+    types: { type: Array, default: () => [] },
+    company: { type: Array, default: () => [] },
+    categories: { type: Array, default: () => [] },
+    projects: { type: Array, default: () => [] },
+    helpdesks: { type: Array, default: () => [] },
+    agents: { type: Array, default: () => [] },
+    companies:    { type: Array,   default: () => [] },
+    isSuperAdmin: { type: Boolean, default: false },
+    allProjects:  { type: Array,   default: () => [] },
+    allHelpdesks: { type: Array,   default: () => [] },
+    allCategories:{ type: Array,   default: () => [] },
+    can: { type: Object, default: () => ({ create: false, delete: false }) },
 })
 
 /* ─────────────────────────────────────────────────────────
@@ -41,16 +47,15 @@ const { authUser } = useAuth()
  * UI state
  * ───────────────────────────────────────────────────────── */
 const sidebarOpen = ref(false)
-const showCreate  = ref(false)
-const showEdit    = ref(false)
-const editingId   = ref(null)
+const showCreate = ref(false)
+const showEdit = ref(false)
+const editingId = ref(null)
 
 /* ─────────────────────────────────────────────────────────
  * Computed
  * ───────────────────────────────────────────────────────── */
-const canInternal = computed(() =>
-    ['admin', 'agent'].includes(authUser.value?.role)
-)
+const canInternal  = computed(() => ['admin', 'agent'].includes(authUser.value?.role))
+const isSuperAdmin = computed(() => authUser.value?.role === 'super_admin')
 
 const sortedStatuses = computed(() =>
     Array.isArray(props.statuses)
@@ -79,6 +84,10 @@ const agentOptions = computed(() => [
     { id: '', name: 'Todos' },
     ...props.agents.map(a => ({ id: a.id, name: a.name })),
 ])
+const companyOptions = computed(() => [
+    { id: '', name: 'Todas las compañías' },
+    ...props.companies.map(c => ({ id: c.id, name: c.name })),
+])
 
 /* ─────────────────────────────────────────────────────────
  * Actions
@@ -98,7 +107,7 @@ const clearAll = async () => {
 
 const openEdit = (ticketId) => {
     editingId.value = ticketId
-    showEdit.value  = true
+    showEdit.value = true
 }
 
 const onTicketCreated = () => store.fetchTickets()
@@ -127,6 +136,15 @@ onMounted(() => store.fetchTickets())
                 </div>
 
                 <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl
+            bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+
+                        <span class="material-symbols-outlined text-blue-500 text-sm">business</span>
+
+                        <span class="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                            {{ company.name }}
+                        </span>
+                    </div>
                     <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl
                                 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         <span class="material-symbols-outlined text-slate-500 text-sm">confirmation_number</span>
@@ -148,14 +166,9 @@ onMounted(() => store.fetchTickets())
             </div>
 
             <!-- ── Filtros: botón + chips ───────────────────────────────────── -->
-            <KanbanFilterBar
-                :priorities="priorities"
-                :agents="agents"
-                :projects="projects"
-                :categories="categories"
-                :types="types"
-                @open-sidebar="sidebarOpen = true"
-            />
+            <KanbanFilterBar :priorities="priorities" :agents="agents" :projects="projects" :categories="categories"
+                :types="types" :companies="companies" :is-super-admin="isSuperAdmin"
+                @open-sidebar="sidebarOpen = true" />
 
             <!-- ── Loading skeleton ────────────────────────────────────────── -->
             <div v-if="store.loading" class="flex gap-5 overflow-hidden">
@@ -166,12 +179,8 @@ onMounted(() => store.fetchTickets())
             <!-- ── Kanban board ─────────────────────────────────────────────── -->
             <div v-else class="flex gap-5 overflow-x-auto pb-4 pt-1 pr-2 custom-scrollbar"
                 style="min-height: calc(100vh - 15rem)">
-                <KanbanColumn
-                    v-for="status in sortedStatuses"
-                    :key="status.id"
-                    :status="status"
-                    @edit-ticket="openEdit"
-                />
+                <KanbanColumn v-for="status in sortedStatuses" :key="status.id" :status="status"
+                    @edit-ticket="openEdit" />
 
                 <div v-if="sortedStatuses.length === 0"
                     class="flex-1 flex flex-col items-center justify-center text-slate-400 gap-3">
@@ -182,108 +191,86 @@ onMounted(() => store.fetchTickets())
         </div>
 
         <!-- ── SidebarFilter ───────────────────────────────────────────────── -->
-        <SidebarFilter
-            v-model:open="sidebarOpen"
-            :active-count="store.activeFilterCount"
-            title="Filtrar tickets"
-            @clear="clearAll"
-        >
+        <SidebarFilter v-model:open="sidebarOpen" :active-count="store.activeFilterCount" title="Filtrar tickets"
+            @clear="clearAll">
             <div class="space-y-5 pt-4">
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Búsqueda rápida</label>
-                    <TextInput
-                        :model-value="store.filters.search ?? ''"
-                        placeholder="Título o número..."
-                        icon="search"
-                        @update:model-value="v => applyFilter('search', v)"
-                    />
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Búsqueda
+                        rápida</label>
+                    <TextInput :model-value="store.filters.search ?? ''" placeholder="Título o número..." icon="search"
+                        @update:model-value="v => applyFilter('search', v)" />
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Prioridad</label>
-                    <SelectInput
-                        :model-value="store.filters.priority_id ?? ''"
-                        :options="priorityOptions"
-                        @update:model-value="v => applyFilter('priority_id', v ? Number(v) : null)"
-                    />
+                    <label
+                        class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Prioridad</label>
+                    <SelectInput :model-value="store.filters.priority_id ?? ''" :options="priorityOptions"
+                        @update:model-value="v => applyFilter('priority_id', v ? Number(v) : null)" />
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Proyecto</label>
-                    <SelectInput
-                        :model-value="store.filters.project_id ?? ''"
-                        :options="projectOptions"
-                        @update:model-value="v => applyFilter('project_id', v ? Number(v) : null)"
-                    />
+                    <label
+                        class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Proyecto</label>
+                    <SelectInput :model-value="store.filters.project_id ?? ''" :options="projectOptions"
+                        @update:model-value="v => applyFilter('project_id', v ? Number(v) : null)" />
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Categoría</label>
-                    <SelectInput
-                        :model-value="store.filters.category_id ?? ''"
-                        :options="categoryOptions"
-                        @update:model-value="v => applyFilter('category_id', v ? Number(v) : null)"
-                    />
+                    <label
+                        class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Categoría</label>
+                    <SelectInput :model-value="store.filters.category_id ?? ''" :options="categoryOptions"
+                        @update:model-value="v => applyFilter('category_id', v ? Number(v) : null)" />
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo</label>
-                    <SelectInput
-                        :model-value="store.filters.type_id ?? ''"
-                        :options="typeOptions"
-                        @update:model-value="v => applyFilter('type_id', v ? Number(v) : null)"
-                    />
+                    <label
+                        class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo</label>
+                    <SelectInput :model-value="store.filters.type_id ?? ''" :options="typeOptions"
+                        @update:model-value="v => applyFilter('type_id', v ? Number(v) : null)" />
                 </div>
 
                 <div v-if="canInternal">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Asignado a</label>
-                    <SelectInput
-                        :model-value="store.filters.assigned_to ?? ''"
-                        :options="agentOptions"
-                        @update:model-value="v => applyFilter('assigned_to', v ? Number(v) : null)"
-                    />
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Asignado
+                        a</label>
+                    <SelectInput :model-value="store.filters.assigned_to ?? ''" :options="agentOptions"
+                        @update:model-value="v => applyFilter('assigned_to', v ? Number(v) : null)" />
+                </div>
+
+                <div v-if="isSuperAdmin">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Compañía</label>
+                    <SelectInput :model-value="store.filters.company_id ?? ''" :options="companyOptions"
+                        @update:model-value="v => applyFilter('company_id', v ? Number(v) : null)" />
                 </div>
             </div>
         </SidebarFilter>
 
         <!-- ── Modales ─────────────────────────────────────────────────────── -->
-        <CreateTicketModal
-            :show="showCreate"
-            :statuses="statuses"
-            :priorities="priorities"
-            :types="types"
-            :categories="categories"
-            :projects="projects"
-            :helpdesks="helpdesks"
-            @close="showCreate = false"
-            @created="onTicketCreated"
-        />
+        <CreateTicketModal :show="showCreate" :statuses="statuses" :priorities="priorities" :types="types"
+            :categories="categories" :projects="projects" :helpdesks="helpdesks"
+            :companies="companies" :is-super-admin="isSuperAdmin"
+            :all-projects="allProjects" :all-helpdesks="allHelpdesks" :all-categories="allCategories"
+            @close="showCreate = false" @created="onTicketCreated" />
 
-        <EditTicketModal
-            :show="showEdit"
-            :ticket-id="editingId"
-            :statuses="statuses"
-            :priorities="priorities"
-            :types="types"
-            :categories="categories"
-            :projects="projects"
-            :helpdesks="helpdesks"
-            :can-internal="canInternal"
-            :can-delete="can.delete"
-            @close="showEdit = false"
-            @updated="store.fetchTickets()"
-            @deleted="store.fetchTickets()"
-        />
+        <EditTicketModal :show="showEdit" :ticket-id="editingId" :statuses="statuses" :priorities="priorities"
+            :types="types" :categories="categories" :projects="projects" :helpdesks="helpdesks"
+            :companies="companies" :is-super-admin="isSuperAdmin"
+            :all-projects="allProjects" :all-helpdesks="allHelpdesks" :all-categories="allCategories"
+            :can-internal="canInternal" :can-delete="can.delete" @close="showEdit = false"
+            @updated="store.fetchTickets()" @deleted="store.fetchTickets()" />
 
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { height: 6px; }
+.custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
+}
+
 .custom-scrollbar::-webkit-scrollbar-track {
     @apply bg-slate-100 dark:bg-slate-800 rounded-full;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-slate-300 dark:bg-slate-600 rounded-full;
 }
